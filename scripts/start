@@ -1,0 +1,24 @@
+#!/bin/sh
+echo ""
+echo "██╗    ██╗███████╗██████╗ ██████╗ ██████╗ ██╗   ██╗"
+echo "██║    ██║██╔════╝██╔══██╗╚════██╗██╔══██╗╚██╗ ██╔╝"
+echo "██║ █╗ ██║█████╗  ██████╔╝ █████╔╝██████╔╝ ╚████╔╝ "
+echo "██║███╗██║██╔══╝  ██╔══██╗██╔═══╝ ██╔═══╝   ╚██╔╝  "
+echo "╚███╔███╔╝███████╗██████╔╝███████╗██║        ██║   "
+echo " ╚══╝╚══╝ ╚══════╝╚═════╝ ╚══════╝╚═╝        ╚═╝   "
+echo "                                                   "
+echo ""
+
+if [ ! -f /firstrun.txt ]
+then
+    echo "Preparing first start"
+    touch /firstrun.txt
+    usermod -u $UID www-data
+    chown -R www-data:www-data $INSTALL_DIR
+    echo "OK"
+fi
+
+echo "starting supervisor"
+service supervisor start
+
+tail -f /var/log/nginx/error.log

@@ -1,14 +1,17 @@
-# Version: 0.0.1
+# Version: 0.0.2
 FROM ubuntu:trusty
-MAINTAINER Jeremy TheHipbot Chambers "jeremy@thehipbot.com"
+MAINTAINER Kevin Gliewe "kevingliewe@gmail.com"
 
-ENV REFRESHED_AT 2016-07-14
+ENV DEBIAN_FRONTEND noninteractive
+
+ENV REFRESHED_AT 2017-08-13
 
 # env vars
 ENV PW admin
 ENV INSTALL_DIR /home/www-data
 ENV W2P_DIR $INSTALL_DIR/web2py
 ENV CERT_PASS web2py
+ENV UID 1000
 
 EXPOSE 80 443 8000
 
@@ -22,7 +25,7 @@ USER root
 RUN apt-get update && \
 	apt-get autoremove && \
 	apt-get autoclean && \
-	apt-get -y install nginx-full && \
+	apt-get -y install nginx-full mysql-server && \
 	apt-get -y install build-essential python-dev libxml2-dev python-pip unzip wget supervisor && \
 	pip install setuptools --no-use-wheel --upgrade && \
 	pip install --upgrade uwsgi && \
@@ -52,6 +55,9 @@ ADD uwsgi-emperor.conf /etc/init/uwsgi-emperor.conf
 # copy Supervisor config file from repo
 ADD supervisor-app.conf /etc/supervisor/conf.d/
 
+# change user id
+RUN usermod -u $UID www-data
+
 # get and install web2py
 RUN wget http://web2py.com/examples/static/web2py_src.zip && \
     mkdir tmp && \
@@ -60,6 +66,7 @@ RUN wget http://web2py.com/examples/static/web2py_src.zip && \
 	rm web2py_src.zip && \
 	rm -rf tmp && \
 	mv web2py/handlers/wsgihandler.py web2py/wsgihandler.py && \
+	ln /home/www-data/web2py/applications/ /apps -s && \
 	chown -R www-data:www-data web2py
 
 USER www-data
@@ -70,3 +77,12 @@ RUN python -c "from gluon.main import save_password; save_password('$PW',80)" &&
 	python -c "from gluon.main import save_password; save_password('$PW',443)"
 
 USER root
+
+# Load in all script files.
+ADD    ./scripts/start /start
+
+# Fix all permissions
+RUN    chmod +x /start
+
+# /start runs it.
+CMD    ["/start"]
